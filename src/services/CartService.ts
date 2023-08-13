@@ -70,43 +70,43 @@ class CartService {
         }
     }
     async getCart(cartId: number) {
-        try {
-            const cart: any = await Cart.findByPk(cartId);
-            const cartItems = cart.getDataValue('items');
-            let processedCartItems: any[] = [];
-
-            for (const cartItem of cartItems) {
-                const itemCode = cartItem.itemCode;
-                const item = await Item.findByPk(itemCode);
-                let itemPrice = item?.getDataValue('price') * cartItem.quantity;
-                let itemDiscount = 0;
-                const promos = item?.getDataValue('promos');
-                let promoDataArray = await Promise.all(promos.map((promo: any) => Promo.findByPk(promo)));
-                promoDataArray = promoDataArray.map(promoData => promoData.dataValues)
-                for (let i = 0; i < promos.length; i++) {
-                    const promoData = promoDataArray[i];
-                    if (cartItem.quantity >= promoData.requiredQuantity) {
-                        const promoCount = Math.floor(cartItem.quantity / promoData?.requiredQuantity);
-                        itemDiscount = itemPrice - (promoCount * promoData?.discountedPrice);
-                        itemPrice = promoCount * promoData?.discountedPrice;
-                    }
-                }
-                processedCartItems = [...processedCartItems, { itemCode: cartItem.itemCode, quantity: cartItem.quantity, itemPrice, itemDiscount }];
-            }
-
-            return processedCartItems;
-        } catch (error) {
-            throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'An error occurred while fetching cart details.')
+        const cart: any = await Cart.findByPk(cartId);
+        if (!cart) {
+            throw new ApiError(httpStatus.NOT_FOUND, `cart with ${cartId} is not found`)
         }
+        const cartItems = cart.getDataValue('items');
+        let processedCartItems: any[] = [];
+
+        for (const cartItem of cartItems) {
+            const itemCode = cartItem.itemCode;
+            const item = await Item.findByPk(itemCode);
+            let itemPrice = item?.getDataValue('price') * cartItem.quantity;
+            let itemDiscount = 0;
+            const promos = item?.getDataValue('promos');
+            let promoDataArray = await Promise.all(promos.map((promo: any) => Promo.findByPk(promo)));
+            promoDataArray = promoDataArray.map(promoData => promoData.dataValues)
+            for (let i = 0; i < promos.length; i++) {
+                const promoData = promoDataArray[i];
+                if (cartItem.quantity >= promoData.requiredQuantity) {
+                    const promoCount = Math.floor(cartItem.quantity / promoData?.requiredQuantity);
+                    const prevPrice = itemPrice;
+                    itemPrice = promoCount * promoData?.discountedPrice + (cartItem.quantity % promoData?.requiredQuantity) * item?.getDataValue('price');
+                    itemDiscount = prevPrice - itemPrice;
+                }
+            }
+            processedCartItems = [...processedCartItems, { itemCode: cartItem.itemCode, quantity: cartItem.quantity, itemPrice, itemDiscount }];
+        }
+
+        return processedCartItems;
     }
     async total(cartItems: any) {
         let totalPrice = 0;
-        cartItems.forEach((item:any)=>totalPrice+=item.itemPrice)
+        cartItems.forEach((item: any) => totalPrice += item.itemPrice)
         return totalPrice;
     }
-    async total_discounts(cartItems:any){
+    async total_discounts(cartItems: any) {
         let totalDiscount = 0;
-        cartItems.forEach((item:any)=>totalDiscount+=item.itemDiscount);
+        cartItems.forEach((item: any) => totalDiscount += item.itemDiscount);
         return totalDiscount;
     }
 }

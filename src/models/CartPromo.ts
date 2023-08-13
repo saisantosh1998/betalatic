@@ -16,7 +16,7 @@ CartPromo.init(
   },
   {
     sequelize,
-    modelName: "CartPromo",
+    modelName: "cartpromo",
   }
 );
 

@@ -2,7 +2,7 @@ import { DataTypes, Model } from 'sequelize';
 import { sequelize } from '../databases/postgres';
 import { Item } from './Item';
 
-class Promo extends Model {}
+class Promo extends Model { }
 
 Promo.init(
   {
@@ -12,7 +12,7 @@ Promo.init(
       references: {
         model: Item,
         key: "code"
-    }
+      }
     },
     requiredQuantity: {
       type: DataTypes.INTEGER,

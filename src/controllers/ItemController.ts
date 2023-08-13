@@ -10,10 +10,7 @@ class ItemController {
             const items: Item[] = await ItemService.getAllItems();
             res.status(httpStatus.OK).json({ items });
         } catch (err) {
-            if (err) {
-                next(err);
-            }
-            throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "something went wrong while calling itemservice")
+            next(err);
         }
     }
 }
